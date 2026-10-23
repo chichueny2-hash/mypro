@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>验证码同步设置指南</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  :root {
+    --ink: #1d1d1f; --sub: #6e6e73; --line: #d2d2d7; --bg: #ffffff;
+    --blue: #007aff; --green: #34c759; --red: #ff3b30; --orange: #ff9500;
+    --soft: #f5f5f7; --accent: #5856d6;
+  }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "WenQuanYi Zen Hei", "PingFang SC", sans-serif; font-size: 12.5px; line-height: 1.65; }
+  .page { width: 210mm; height: 297mm; padding: 14mm 15mm 12mm; position: relative;
+    page-break-after: always; overflow: hidden; }
+  .page:last-child { page-break-after: auto; }
+  .foot { position: absolute; bottom: 7mm; left: 15mm; right: 15mm; display: flex;
+    justify-content: space-between; color: var(--sub); font-size: 10px; border-top: 1px solid var(--line); padding-top: 4px; }
+
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: 1px; }
+  h2 { font-size: 20px; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
+  h3 { font-size: 14.5px; margin: 14px 0 6px; }
+  p { margin: 4px 0; }
+  .lead { color: var(--sub); font-size: 13px; margin-bottom: 10px; }
+  .tag { display: inline-block; font-size: 12px; font-weight: bold; color: #fff; padding: 2px 10px; border-radius: 20px; }
+  .tag.a { background: var(--blue); } .tag.b { background: var(--green); }
+  .tag.part { background: var(--ink); }
+  b.k { background: #fff3c4; padding: 0 3px; border-radius: 3px; }
+  code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 11.5px; background: var(--soft);
+    padding: 1px 5px; border-radius: 4px; }
+
+  .box { border-radius: 10px; padding: 9px 12px; margin: 8px 0; font-size: 12px; }
+  .box.warn { background: #fff4e5; border-left: 4px solid var(--orange); }
+  .box.tip  { background: #eaf3ff; border-left: 4px solid var(--blue); }
+  .box.ok   { background: #e9f8ee; border-left: 4px solid var(--green); }
+  .box b { margin-right: 4px; }
+
+  /* ---------- 流程总览 ---------- */
+  .flow { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 10px; }
+  .node { width: 150px; text-align: center; }
+  .node .dev { width: 92px; height: 170px; margin: 0 auto 8px; border: 7px solid #1c1c1e; border-radius: 22px;
+    background: linear-gradient(160deg, #e8f0ff, #f8f8fb); position: relative; display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: bold; }
+  .node .dev::before { content: ""; position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+    width: 28px; height: 8px; border-radius: 6px; background: #1c1c1e; }
+  .node .dev.a { color: var(--blue); } .node .dev.b { color: var(--green); }
+  .node .dev.cloud::before { display: none; }
+  .node .dev.cloud { border: none; background: none; width: auto; height: 170px; font-size: 13px; }
+  .arrow { flex: 1; text-align: center; color: var(--sub); font-size: 11px; position: relative; padding: 0 4px; }
+  .arrow .line { height: 3px; background: var(--ink); margin: 6px 0; position: relative; }
+  .arrow .line::after { content: ""; position: absolute; right: -2px; top: -5px; border: 6.5px solid transparent; border-left: 10px solid var(--ink); }
+  .bubble-sms { display: inline-block; background: #e9e9eb; border-radius: 12px; padding: 4px 8px; font-size: 10.5px; text-align: left; line-height: 1.4; }
+  .bubble-im { display: inline-block; background: var(--blue); color: #fff; border-radius: 12px; padding: 4px 8px; font-size: 10.5px; text-align: left; line-height: 1.4; }
+
+  table.t { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+  table.t th, table.t td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  table.t th { background: var(--soft); }
+
+  /* ---------- 步骤布局 ---------- */
+  .steps { display: flex; gap: 14px; justify-content: space-between; margin: 8px 0 4px; }
+  .step { width: 32%; }
+  .step .cap { font-size: 11.5px; margin-top: 7px; line-height: 1.55; }
+  .num { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff;
+    font-size: 11.5px; font-weight: bold; align-items: center; justify-content: center; margin-right: 5px; vertical-align: 1px; }
+
+  /* ---------- iPhone 示意屏 ---------- */
+  .phone { width: 100%; height: 400px; border: 8px solid #1c1c1e; border-radius: 34px; background: #f2f2f7;
+    position: relative; overflow: hidden; font-size: 11px; line-height: 1.35; }
+  .phone.tall { height: 470px; }
+  .compact .phone { height: 342px; }
+  .compact .step .cap { margin-top: 5px; }
+  .phone.white { background: #fff; }
+  .phone .di { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 62px; height: 17px; border-radius: 10px; background: #1c1c1e; z-index: 3; }
+  .phone .sb { height: 30px; display: flex; justify-content: space-between; align-items: center; padding: 0 18px; font-weight: bold; font-size: 10.5px; }
+  .phone .who { position: absolute; top: 8px; left: 16px; font-size: 9px; font-weight: bold; color: #fff; padding: 1px 7px; border-radius: 9px; z-index: 4; }
+  .phone .who.a { background: var(--blue); } .phone .who.b { background: var(--green); }
+  .phone .back { color: var(--blue); padding: 2px 10px; font-size: 11px; height: 18px; }
+  .phone .lt { font-size: 21px; font-weight: bold; padding: 0 12px 6px; }
+  .phone .mt { font-size: 12.5px; font-weight: bold; text-align: center; padding: 0 10px 8px; }
+  .phone .sec { color: var(--sub); font-size: 9.5px; padding: 8px 20px 3px; text-transform: uppercase; }
+  .phone .note { color: var(--sub); font-size: 9.5px; padding: 4px 20px 2px; line-height: 1.4; }
+  .grp { background: #fff; border-radius: 10px; margin: 0 10px; overflow: visible; }
+  .row { display: flex; align-items: center; min-height: 32px; padding: 0 10px; position: relative; }
+  .row + .row::before { content: ""; position: absolute; top: 0; left: 38px; right: 0; border-top: 0.5px solid #d8d8dc; }
+  .row.noicon + .row.noicon::before { left: 10px; }
+  .row .ic { width: 20px; height: 20px; border-radius: 5px; margin-right: 8px; flex: none; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: bold; }
+  .row .lb { flex: 1; }
+  .row .vl { color: var(--sub); margin-right: 4px; font-size: 10px; }
+  .row .ch { color: #c4c4c7; font-size: 13px; }
+  .row .ck { color: var(--blue); font-weight: bold; width: 16px; }
+  .row .bl { color: var(--blue); }
+  .row .red { color: var(--red); }
+  .tg { width: 34px; height: 20px; border-radius: 10px; background: #e5e5ea; position: relative; flex: none; }
+  .tg::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .tg.on { background: var(--green); } .tg.on::after { left: 16px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#8e8e93,#c7c7cc); margin-right: 9px; flex: none; }
+
+  /* 高亮点击位置 */
+  .hl { outline: 2.5px solid var(--red); outline-offset: -1px; border-radius: 8px; z-index: 2; }
+  .pin { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; border-radius: 50%;
+    background: var(--red); color: #fff; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; z-index: 5; box-shadow: 0 0 0 2px #fff; }
+
+  /* 快捷指令 */
+  .sc-tabs { position: absolute; bottom: 0; left: 0; right: 0; height: 46px; background: rgba(249,249,249,.97); border-top: 0.5px solid #ccc;
+    display: flex; justify-content: space-around; align-items: center; font-size: 9.5px; color: #999; }
+  .sc-tabs .on { color: var(--blue); font-weight: bold; }
+  .plus { position: absolute; top: 34px; right: 14px; color: var(--blue); font-size: 22px; font-weight: 300; line-height: 1; width: 26px; height: 26px; text-align: center; }
+  .act { background: #fff; border-radius: 11px; margin: 0 9px 7px; padding: 7px 9px; font-size: 10.5px; line-height: 1.75; position: relative; }
+  .act .ai { display: inline-flex; width: 16px; height: 16px; border-radius: 4px; color: #fff; font-size: 9px; align-items: center; justify-content: center; margin-right: 5px; vertical-align: -3px; font-weight: bold; }
+  .act.in { margin-left: 22px; }
+  .var { display: inline-block; background: #e3efff; color: var(--blue); border-radius: 5px; padding: 0 5px; font-weight: bold; line-height: 1.5; }
+  .var.pur { background: #ece9ff; color: var(--accent); }
+  .par { color: var(--blue); }
+  .pill { display: inline-block; border-radius: 6px; padding: 0 5px; background: #eef0f3; color: var(--blue); }
+  .step-badge { position: absolute; left: -7px; top: -7px; width: 17px; height: 17px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 9.5px; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 3; }
+  .trig { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 10px; }
+  .trig div { background: #fff; border-radius: 9px; padding: 7px 8px; font-size: 10.5px; position: relative; }
+  .trig div .e { display: block; font-size: 15px; margin-bottom: 1px; }
+  .btnbar { position: absolute; bottom: 14px; left: 12px; right: 12px; text-align: center; background: var(--blue); color: #fff; border-radius: 10px; padding: 7px; font-weight: bold; }
+  .btnbar.hl { outline-offset: 2px; }
+
+  /* 信息 App */
+  .chat { padding: 6px 10px; }
+  .msg { max-width: 82%; padding: 6px 9px; border-radius: 15px; margin: 4px 0; font-size: 10.5px; line-height: 1.45; }
+  .msg.in { background: #e9e9eb; }
+  .msg.out { background: var(--blue); color: #fff; margin-left: auto; }
+  .chat-head { text-align: center; padding: 0 0 6px; border-bottom: 0.5px solid #ddd; }
+  .chat-head .avatar { margin: 0 auto 2px; width: 32px; height: 32px; }
+  .chat-head .n { font-size: 9.5px; }
+  .ts { text-align: center; color: var(--sub); font-size: 9px; margin: 6px 0 2px; }
+  .delivered { text-align: right; color: var(--sub); font-size: 8.5px; }
+
+  /* 锁屏 */
+  .lock { background: linear-gradient(170deg, #263a5e 0%, #5b3f7a 55%, #b35d7f 100%); color: #fff; }
+  .lock .sb { color: #fff; }
+  .lock .clock { text-align: center; font-size: 52px; font-weight: bold; letter-spacing: 1px; margin-top: 10px; line-height: 1.1; }
+  .lock .date { text-align: center; font-size: 12px; opacity: .9; }
+  .notif { margin: 14px 9px 0; background: rgba(255,255,255,.88); color: var(--ink); border-radius: 15px; padding: 8px 10px; font-size: 10.5px; line-height: 1.45; }
+  .notif .h { display: flex; align-items: center; gap: 6px; font-size: 9.5px; color: var(--sub); margin-bottom: 2px; }
+  .notif .h .mi { width: 17px; height: 17px; border-radius: 4px; background: var(--green); color: #fff; font-size: 9px; display: flex; align-items: center; justify-content: center; }
+  .notif .t { font-weight: bold; }
+
+  .codeblock { background: #1d1d1f; color: #f5f5f7; border-radius: 10px; padding: 10px 14px; font-family: "DejaVu Sans Mono", "WenQuanYi Zen Hei Mono", monospace;
+    font-size: 11px; line-height: 1.7; white-space: pre; margin: 8px 0; }
+  .codeblock .c { color: #8e8e93; } .codeblock .k { color: #ff9f0a; } .codeblock .v { color: #64d2ff; } .codeblock .s { color: #ffd60a; }
+  ol.list { margin: 4px 0; padding-left: 20px; } ol.list li { margin: 3px 0; }
+  ul.list { margin: 4px 0; padding-left: 18px; } ul.list li { margin: 3px 0; }
+  .two { display: flex; gap: 16px; } .two > div { flex: 1; }
+</style>
+</head>
+<body>
+
+<!-- ================= 第 1 页：总览 ================= -->
+<section class="page">
+  <div style="margin-top: 4mm;">
+    <span class="tag part">设置指南</span>
+  </div>
+  <h1 style="margin-top: 10px;">iPhone 短信验证码自动同步</h1>
+  <p class="lead">主手机 A 收到短信验证码后，「快捷指令」会自动把验证码用 iMessage 发到另一台手机 B。整个过程不用写代码，也不需要第三方 App。</p>
+
+  <div class="flow">
+    <div class="node">
+      <div class="dev cloud"><div class="bubble-sms">【某银行】您的验证码为<br><b>382915</b>，5 分钟内有效</div></div>
+      <div><b>银行 / App</b><br><span style="color:var(--sub);font-size:11px">发送普通短信</span></div>
+    </div>
+    <div class="arrow">短信 SMS<div class="line"></div></div>
+    <div class="node">
+      <div class="dev a">A</div>
+      <div><b>手机 A（主手机）</b><br><span style="color:var(--sub);font-size:11px">插着收验证码的 SIM 卡<br>运行快捷指令自动化</span></div>
+    </div>
+    <div class="arrow">iMessage 自动转发<div class="line"></div><div class="bubble-im">验证码：382915</div></div>
+    <div class="node">
+      <div class="dev b">B</div>
+      <div><b>手机 B（副手机）</b><br><span style="color:var(--sub);font-size:11px">弹通知，可直接看到验证码</span></div>
+    </div>
+  </div>
+
+  <h3>为什么 B 要单独登录一个 iMessage 账号？</h3>
+  <p>如果两台手机的 iMessage 都用同一个 Apple 账户，系统会认为它们是「同一个人」。这时 A 把验证码发给「自己」，B 上可能<b class="k">不弹通知</b>，A 的信息列表里也会多出一堆记录。</p>
+  <p>解决方法是让 B 的<b class="k">「信息」App 单独登录一个新的 Apple 账户</b>，<b>iCloud 照片、备份、通讯录等仍然保持原账户，完全不受影响</b>。</p>
+
+  <h3>设置流程（约 15 分钟）</h3>
+  <table class="t">
+    <tr><th style="width:16%">部分</th><th style="width:14%">在哪台手机</th><th>做什么</th><th style="width:10%">页码</th></tr>
+    <tr><td>准备</td><td>任意</td><td>注册一个新的 Apple 账户，专门给 B 收验证码（免费，用任意邮箱注册即可）</td><td>2</td></tr>
+    <tr><td>第一部分</td><td><span class="tag b">B</span></td><td>把「信息」App 的 iMessage 换成新的 Apple 账户</td><td>2</td></tr>
+    <tr><td>第二部分</td><td><span class="tag a">A</span></td><td>检查 iMessage 地址，再手动发一条测试信息</td><td>3</td></tr>
+    <tr><td>第三部分</td><td><span class="tag a">A</span></td><td>新建快捷指令自动化：收到含「验证码」的短信 → 提取数字 → 发给 B</td><td>4–5</td></tr>
+    <tr><td>第四部分</td><td><span class="tag a">A</span> <span class="tag b">B</span></td><td>测试，以及常见问题排查</td><td>6</td></tr>
+  </table>
+
+  <div class="box tip"><b>说明</b>本指南中的手机界面是<b>示意图</b>，按 iOS 18 / iOS 26 的中文界面绘制。不同系统版本的文字和位置可能略有差别，以手机上实际显示为准。<span style="color:var(--red);font-weight:bold">红框和红色圆点</span>标出的是要点的位置，文中的 <span class="tag a" style="font-size:10px">A</span> <span class="tag b" style="font-size:10px">B</span> 标签表示在哪台手机上操作。</div>
+  <div class="box warn"><b>安全提醒</b>这样设置后，手机 B 也能拿到你所有的短信验证码，等于把「二次验证」能力分了一份给 B。请确保 B 只有你自己能用，并给它设置锁屏密码。</div>
+
+  <div class="foot"><span>iPhone 短信验证码自动同步 · 设置指南</span><span>1 / 6</span></div>
+</section>
+
+<!-- ================= 第 2 页：手机 B ================= -->
+<section class="page">
+  <h2 style="margin-top:-2mm"><span class="tag b">手机 B</span> 第一部分：让「信息」单独登录新账户</h2>
+  <p class="lead">准备：先注册一个新的 Apple 账户，可以在 B 上用 Safari 打开 account.apple.com，或者在电脑上注册。下文用 <code>b-phone@example.com</code> 代指这个新账户，实际操作时换成你自己注册的。</p>
+
+  <div class="steps compact">
+    <div class="step">
+      <div class="phone">
+        <div class="di"></div><div class="who b">B</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="lt">设置</div>
+        <div class="grp"><div class="row" style="min-height:46px"><div class="avatar"></div><div class="lb"><b>你的名字</b><br><span style="color:var(--sub);font-size:9.5px">Apple 账户、iCloud 等</span></div><span class="ch">›</span></div></div>
+        <div style="height:10px"></div>
+        <div class="grp">
+          <div class="row"><div class="ic" style="background:#ff9500">✈</div><div class="lb">飞行模式</div><div class="tg"></div></div>
+          <div class="row"><div class="ic" style="background:#007aff">≋</div><div class="lb">无线局域网</div><span class="vl">Home</span><span class="ch">›</span></div>
+          <div class="row"><div class="ic" style="background:#34c759">⌁</div><div class="lb">蜂窝网络</div><span class="ch">›</span></div>
+        </div>
+        <div style="height:10px"></div>
+        <div class="grp">
+          <div class="row"><div class="ic" style="background:#8e8e93">⚙</div><div class="lb">通用</div><span class="ch">›</span></div>
+          <div class="row"><div class="ic" style="background:#ff3b30">◉</div><div class="lb">通知</div><span class="ch">›</span></div>
+        </div>
+        <div style="height:10px"></div>
+        <div class="grp">
+          <div class="row hl"><div class="ic" style="background:#5856d6">▦</div><div class="lb"><b>App</b></div><span class="ch">›</span><span class="pin">1</span></div>
+        </div>
+      </div>
+      <div class="cap"><span class="num">1</span>打开<b>设置</b>，滑到最下面，点 <b>App</b>。<br><span style="color:var(--sub)">（iOS 17 及以前的版本，「信息」就直接在设置列表里）</span></div>
+    </div>
+
+    <div class="step">
+      <div class="phone">
+        <div class="di"></div><div class="who b">B</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="back">‹ 设置</div>
+        <div class="lt">App</div>
+        <div class="grp">
+          <div class="row"><div class="ic" style="background:#34c759">✆</div><div class="lb">电话</div><span class="ch">›</span></div>
+          <div class="row"><div class="ic" style="background:#ff9500">◧</div><div class="lb">图书</div><span class="ch">›</span></div>
+          <div class="row"><div class="ic" style="background:#007aff">✉</div><div class="lb">邮件</div><span class="ch">›</span></div>
+          <div class="row"><div class="ic" style="background:#ffcc00">▤</div><div class="lb">备忘录</div><span class="ch">›</span></div>
+          <div class="row"><div class="ic" style="background:#ff2d55">♪</div><div class="lb">音乐</div><span class="ch">›</span></div>
+          <div class="row hl"><div class="ic" style="background:#34c759">💬</div><div class="lb"><b>信息</b></div><span class="ch">›</span><span class="pin">2</span></div>
+          <div class="row"><div class="ic" style="background:#007aff">⊕</div><div class="lb">Safari 浏览器</div><span class="ch">›</span></div>
+        </div>
+      </div>
+      <div class="cap"><span class="num">2</span>在 App 列表里找到 <b>信息</b>，点进去。列表很长的话，可以用顶部的搜索框。</div>
+    </div>
+
+    <div class="step">
+      <div class="phone">
+        <div class="di"></div><div class="who b">B</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="back">‹ App</div>
+        <div class="mt">信息</div>
+        <div class="grp">
+          <div class="row noicon"><div class="lb">iMessage 信息</div><div class="tg on"></div></div>
+        </div>
+        <div class="note">iMessage 信息可通过无线局域网发送到其他 iPhone、iPad、iPod touch 和 Mac。</div>
+        <div style="height:8px"></div>
+        <div class="grp">
+          <div class="row noicon"><div class="lb">共享名称和照片</div><span class="ch">›</span></div>
+          <div class="row noicon"><div class="lb">显示联系人照片</div><div class="tg on"></div></div>
+          <div class="row noicon"><div class="lb">短信转发</div><span class="ch">›</span></div>
+          <div class="row noicon"><div class="lb">作为短信发送</div><div class="tg on"></div></div>
+          <div class="row noicon hl"><div class="lb"><b>发送与接收</b></div><span class="vl">2 个地址</span><span class="ch">›</span><span class="pin">3</span></div>
+        </div>
+      </div>
+      <div class="cap"><span class="num">3</span>先确认 <b>iMessage 信息</b>开关是<span style="color:var(--green);font-weight:bold">绿色（打开）</span>的，然后点 <b>发送与接收</b>。</div>
+    </div>
+  </div>
+
+  <div class="steps compact" style="margin-top:8px">
+    <div class="step">
+      <div class="phone">
+        <div class="di"></div><div class="who b">B</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="back">‹ 信息</div>
+        <div class="mt">iMessage 信息</div>
+        <div class="sec">你可以通过以下方式接收 iMessage 信息并从中回复</div>
+        <div class="grp">
+          <div class="row noicon"><span class="ck">✓</span><div class="lb">+86 139 0000 0000</div></div>
+          <div class="row noicon"><span class="ck">✓</span><div class="lb">old@icloud.com</div></div>
+        </div>
+        <div style="height:14px"></div>
+        <div class="grp">
+          <div class="row noicon hl"><div class="lb bl">Apple 账户：old@icloud.com</div><span class="pin">4</span></div>
+        </div>
+        <div style="position:absolute;bottom:10px;left:10px;right:10px;background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.18);">
+          <div class="row noicon" style="justify-content:center;color:var(--blue)">更改位置</div>
+          <div class="row noicon hl" style="justify-content:center"><span class="red"><b>退出登录</b></span><span class="pin">5</span></div>
+        </div>
+      </div>
+      <div class="cap"><span class="num">4</span>点最下面蓝色的 <b>Apple 账户：…</b>（这里显示的是 A 和 B 共用的那个旧账户）。<br><span class="num">5</span>在弹出的菜单里选 <b style="color:var(--red)">退出登录</b>。<br><span style="color:var(--sub)">这一步只会退出「信息」，<b>不会</b>退出 iCloud。</span></div>
+    </div>
+
+    <div class="step">
+      <div class="phone">
+        <div class="di"></div><div class="who b">B</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="back">‹ 信息</div>
+        <div class="mt">iMessage 信息</div>
+        <div class="note" style="text-align:center;padding:6px 18px 10px">使用你的 Apple 账户登录 iMessage 信息</div>
+        <div class="grp">
+          <div class="row noicon hl"><div class="lb"><span class="mono" style="background:none;padding:0">b-phone@example.com</span></div><span class="pin">6</span></div>
+          <div class="row noicon"><div class="lb" style="color:#aaa">密码</div></div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="grp"><div class="row noicon hl" style="justify-content:center"><span class="bl"><b>登录</b></span><span class="pin">7</span></div></div>
+        <div class="note" style="margin-top:12px">⚠️ 系统可能会问「使用其他 Apple 账户？」，选择<b>使用其他 Apple 账户</b>，然后输入新账户。</div>
+      </div>
+      <div class="cap"><span class="num">6</span>输入准备好的<b>新 Apple 账户</b>和密码。<br><span class="num">7</span>点<b>登录</b>。如果新账户开了双重认证，按提示输入验证码。<br><span style="color:var(--sub)">注意：这里<b>不要</b>再填 A 用的那个旧账户。</span></div>
+    </div>
+
+    <div class="step">
+      <div class="phone">
+        <div class="di"></div><div class="who b">B</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="back">‹ 信息</div>
+        <div class="mt">iMessage 信息</div>
+        <div class="sec">你可以通过以下方式接收 iMessage 信息并从中回复</div>
+        <div class="grp">
+          <div class="row noicon hl"><span class="ck">✓</span><div class="lb"><b>b-phone@example.com</b></div><span class="pin">8</span></div>
+        </div>
+        <div class="sec">开始新对话的方式</div>
+        <div class="grp">
+          <div class="row noicon"><span class="ck">✓</span><div class="lb">b-phone@example.com</div></div>
+        </div>
+        <div style="height:14px"></div>
+        <div class="grp"><div class="row noicon"><div class="lb bl">Apple 账户：b-phone@example.com</div></div></div>
+        <div class="note" style="margin-top:8px">如果 B 也有自己的电话号码，这里可能还会出现号码一行，<b>不用管它</b>。</div>
+      </div>
+      <div class="cap"><span class="num">8</span>等十几秒，看到新账户邮箱前面有 <b style="color:var(--blue)">✓</b> 就说明成功了。<br><span style="color:var(--sub)">如果一直转圈显示「正在等待激活」，先确认 B 已经联网，或者重启 B 再看。</span></div>
+    </div>
+  </div>
+
+  <div class="box ok" style="margin-top:6px"><b>B 的设置到这里就完成了。</b>另外，到「设置 → 通知 → 信息」里确认<b>允许通知</b>已经打开，并且勾选了「锁定屏幕」和「横幅」。</div>
+  <div class="foot"><span>第一部分 · 手机 B</span><span>2 / 6</span></div>
+</section>
+
+<!-- ================= 第 3 页：手机 A 检查 + 测试 ================= -->
+<section class="page">
+  <h2><span class="tag a">手机 A</span> 第二部分：检查 iMessage 地址，并手动测试</h2>
+  <p class="lead">配置自动化之前，先确认 A 能用 iMessage 把信息<b>发到 B 并让 B 弹出通知</b>。手动测试通过了，后面的自动化才能用。</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="phone">
+        <div class="di"></div><div class="who a">A</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="back">‹ 信息</div>
+        <div class="mt">iMessage 信息</div>
+        <div class="sec">你可以通过以下方式接收 iMessage 信息并从中回复</div>
+        <div class="grp">
+          <div class="row noicon"><span class="ck">✓</span><div class="lb">+86 139 0000 0000</div></div>
+          <div class="row noicon"><span class="ck">✓</span><div class="lb">old@icloud.com</div></div>
+        </div>
+        <div class="sec">开始新对话的方式</div>
+        <div class="grp">
+          <div class="row noicon"><span class="ck">✓</span><div class="lb">+86 139 0000 0000</div></div>
+          <div class="row noicon"><span class="ck"></span><div class="lb">old@icloud.com</div></div>
+        </div>
+        <div style="height:14px"></div>
+        <div class="grp"><div class="row noicon"><div class="lb bl">Apple 账户：old@icloud.com</div></div></div>
+        <div class="note hl" style="margin:10px 10px 0;padding:6px 10px;position:relative">✅ 列表里<b>没有</b> b-phone@example.com<span class="pin">1</span></div>
+      </div>
+      <div class="cap"><span class="num">1</span>在 A 上进入同样的位置：<b>设置 → App → 信息 → 发送与接收</b>。<br>确认列表里<b>没有出现 B 的新账户</b>，A 保持原样就行，<b>什么都不用改</b>。</div>
+    </div>
+
+    <div class="step">
+      <div class="phone white">
+        <div class="di"></div><div class="who a">A</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="chat-head"><div class="avatar"></div><div class="n">b-phone@example.com ›</div></div>
+        <div class="chat">
+          <div class="ts">iMessage 信息<br>今天 9:41</div>
+          <div class="msg out hl" style="position:relative">测试：验证码 123456<span class="pin">2</span></div>
+          <div class="delivered">已送达</div>
+        </div>
+        <div style="position:absolute;bottom:12px;left:10px;right:10px;display:flex;gap:6px;align-items:center">
+          <div style="width:24px;height:24px;border-radius:50%;background:#e9e9eb;text-align:center;line-height:24px;color:#888">+</div>
+          <div style="flex:1;border:1px solid #ccc;border-radius:14px;padding:4px 10px;color:#aaa;font-size:10px">iMessage 信息</div>
+        </div>
+      </div>
+      <div class="cap"><span class="num">2</span>打开 A 的<b>信息</b> App，新建对话，收件人填 <b>B 的新账户邮箱</b>，发一条「测试：验证码 123456」。<br>气泡是<b style="color:var(--blue)">蓝色</b>才说明走的是 iMessage。如果是绿色，或者提示无法发送，就回到第 2 页检查 B 的设置。</div>
+    </div>
+
+    <div class="step">
+      <div class="phone lock">
+        <div class="di"></div><div class="who b">B</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="date" style="margin-top:6px">10月23日 星期五</div>
+        <div class="clock">9:41</div>
+        <div class="notif hl" style="position:relative">
+          <div class="h"><span class="mi">💬</span>信息<span style="margin-left:auto">现在</span></div>
+          <div class="t">old@icloud.com</div>
+          <div>测试：验证码 123456</div>
+          <span class="pin">3</span>
+        </div>
+      </div>
+      <div class="cap"><span class="num">3</span>B <b>锁屏</b>时也能收到通知，测试就通过了。<br><span style="color:var(--sub)">发件人可能显示 A 的手机号或邮箱。可以在 B 的通讯录里把它存成「验证码转发」，以后一眼就能认出来。</span></div>
+    </div>
+  </div>
+
+  <h3>测试没通过？逐项排查</h3>
+  <table class="t">
+    <tr><th style="width:36%">现象</th><th>处理方法</th></tr>
+    <tr><td>A 发出去的气泡是<b>绿色</b>，或者显示「未送达」</td><td>B 的 iMessage 还没激活成功。回到第 2 页第 8 步，确认邮箱前有 ✓，必要时重启 B。</td></tr>
+    <tr><td>B 的「信息」里有这条消息，但<b>没有弹通知</b></td><td>B：设置 → 通知 → 信息 → 允许通知；再检查是否开着<b>专注模式 / 勿扰</b>。</td></tr>
+    <tr><td>消息出现在 A 自己的对话里</td><td>说明 B 还是登录着旧账户。重新做第 2 页第 4–7 步。</td></tr>
+  </table>
+
+  <div class="foot"><span>第二部分 · 手机 A 检查与测试</span><span>3 / 6</span></div>
+</section>
+
+<!-- ================= 第 4 页：自动化触发条件 ================= -->
+<section class="page">
+  <h2><span class="tag a">手机 A</span> 第三部分（上）：创建自动化，设置触发条件</h2>
+  <p class="lead">自动化只能在收到短信的手机 A 上创建。下面分两步：这一页设置「什么时候运行」，下一页设置「运行什么」。</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="phone">
+        <div class="di"></div><div class="who a">A</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="plus hl">+<span class="pin" style="right:-10px">2</span></div>
+        <div class="lt" style="margin-top:22px">自动化</div>
+        <div class="grp" style="margin-top:4px">
+          <div class="row noicon" style="min-height:44px;color:var(--sub);justify-content:center;font-size:10.5px">还没有自动化</div>
+        </div>
+        <div style="text-align:center;margin-top:16px"><span style="background:var(--blue);color:#fff;border-radius:16px;padding:5px 14px;font-weight:bold;font-size:10.5px">新建自动化</span></div>
+        <div class="sc-tabs">
+          <span>快捷指令</span><span class="on hl" style="position:relative;padding:3px 6px">自动化<span class="pin" style="right:-12px">1</span></span><span>快捷指令中心</span>
+        </div>
+      </div>
+      <div class="cap"><span class="num">1</span>打开<b>快捷指令</b> App，点底部的<b>自动化</b>。<br><span class="num">2</span>点右上角的 <b>＋</b>。还没有自动化的话，也可以直接点中间的「新建自动化」。</div>
+    </div>
+
+    <div class="step">
+      <div class="phone">
+        <div class="di"></div><div class="who a">A</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="mt" style="margin-top:6px">新建自动化</div>
+        <div style="margin:0 10px 8px;background:#e3e3e8;border-radius:9px;padding:5px 9px;color:#888;font-size:10.5px">🔍 搜索</div>
+        <div class="trig">
+          <div><span class="e">⏰</span>特定时间</div>
+          <div><span class="e">⏱</span>闹钟</div>
+          <div><span class="e">⌚</span>睡眠</div>
+          <div><span class="e">📍</span>到达</div>
+          <div><span class="e">✉️</span>电子邮件</div>
+          <div class="hl"><span class="e">💬</span><b>信息</b><span class="pin" style="right:-7px">3</span></div>
+          <div><span class="e">📶</span>无线局域网</div>
+          <div><span class="e">🔵</span>蓝牙</div>
+          <div><span class="e">🔋</span>电池电量</div>
+          <div><span class="e">🔌</span>充电器</div>
+          <div><span class="e">✈️</span>飞行模式</div>
+          <div><span class="e">🌙</span>专注模式</div>
+        </div>
+      </div>
+      <div class="cap"><span class="num">3</span>在触发条件列表里选 <b>信息</b>，列表中间偏下的位置，可以滑动查找，也可以在顶部搜「信息」。</div>
+    </div>
+
+    <div class="step">
+      <div class="phone tall">
+        <div class="di"></div><div class="who a">A</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0 12px 6px"><span class="bl" style="color:var(--blue)">取消</span><b>信息</b><span class="hl" style="color:var(--blue);font-weight:bold;position:relative;padding:0 3px">下一步<span class="pin" style="right:-12px">6</span></span></div>
+        <div class="sec">当我收到信息时</div>
+        <div class="grp">
+          <div class="row noicon"><div class="lb">发件人</div><span class="vl">选取</span><span class="ch">›</span></div>
+          <div class="row noicon hl"><div class="lb">信息包含</div><span class="vl" style="color:var(--ink);font-weight:bold">验证码</span><span class="pin">4</span></div>
+        </div>
+        <div class="note">发件人留空，表示任何人发来的都触发。</div>
+        <div class="sec" style="margin-top:6px">何时运行</div>
+        <div class="grp hl" style="position:relative">
+          <div class="row noicon"><span class="ck">✓</span><div class="lb"><b>立即运行</b></div></div>
+          <div class="row noicon"><span class="ck"></span><div class="lb">运行前确认</div></div>
+          <span class="pin" style="top:30%">5</span>
+        </div>
+        <div style="height:8px"></div>
+        <div class="grp">
+          <div class="row noicon"><div class="lb">运行时通知</div><div class="tg"></div></div>
+        </div>
+        <div class="note">建议关闭「运行时通知」，否则每次转发都会额外弹一条通知。</div>
+      </div>
+      <div class="cap"><span class="num">4</span><b>信息包含</b>里填<b>验证码</b>。<span style="color:var(--sub)">（发件人不用选）</span><br><span class="num">5</span>选<b>立即运行</b>，不要选「运行前确认」。<br><span class="num">6</span>点右上角<b>下一步</b>。</div>
+    </div>
+  </div>
+
+  <div class="box tip"><b>不止「验证码」三个字？</b>「信息包含」一次只能填一个关键词。有的短信写的是「校验码」「动态码」「动态密码」或英文「code」，可以<b>每个关键词各建一个自动化</b>，按本页和下一页的步骤重复做一遍就行。建议至少建「验证码」和「校验码」两个。</div>
+  <div class="box warn"><b>一定要选「立即运行」</b>选成「运行前确认」的话，每次收到验证码都得手动点一下，就算不上自动同步了。</div>
+
+  <div class="foot"><span>第三部分（上）· 手机 A 触发条件</span><span>4 / 6</span></div>
+</section>
+
+<!-- ================= 第 5 页：自动化动作 ================= -->
+<section class="page">
+  <h2><span class="tag a">手机 A</span> 第三部分（下）：添加「提取并转发」的 4 个动作</h2>
+  <p class="lead">点完「下一步」后选<b>新建空白自动化</b>，然后点<b>添加操作</b>，在搜索框里按顺序搜下面 4 个动作并添加。添加好之后应该和右边的示意图一模一样。</p>
+
+  <div class="two">
+    <div style="flex:1.35">
+      <h3 style="margin-top:4px"><span class="num" style="background:var(--ink)">1</span>匹配文本 <span style="color:var(--sub);font-weight:normal;font-size:11.5px">（搜索「匹配文本」）</span></h3>
+      <ul class="list">
+        <li>点蓝色的「<span class="par">模式</span>」，<b>原样</b>输入正则：<code>(?&lt;!\d)\d{4,8}(?!\d)</code></li>
+        <li>点「<span class="par">文本</span>」，在上方的变量栏里选<span class="var pur">快捷指令输入</span>；再点一下这个变量，如果出现选项，选<b>内容</b>。</li>
+        <li>关闭「区分大小写」（数字不受影响，关不关都行）。</li>
+      </ul>
+      <h3><span class="num" style="background:var(--ink)">2</span>从列表中获取项目 <span style="color:var(--sub);font-weight:normal;font-size:11.5px">（搜索「列表中的项目」）</span></h3>
+      <ul class="list">
+        <li>改成：获取 <span class="pill">第一项</span> 从 <span class="var">匹配项</span>。通常会自动填好，确认一下就行。</li>
+      </ul>
+      <h3><span class="num" style="background:var(--ink)">3</span>如果 <span style="color:var(--sub);font-weight:normal;font-size:11.5px">（搜索「如果」）</span></h3>
+      <ul class="list">
+        <li>条件设为：如果 <span class="var">列表中的项目</span> <span class="pill">有任何值</span>。</li>
+        <li>添加后会自动带上「否则」和「结束如果」。<b>「否则」下面不要放任何东西</b>（不想看到它的话，可以删掉「否则」）。</li>
+      </ul>
+      <h3><span class="num" style="background:var(--ink)">4</span>发送信息 <span style="color:var(--sub);font-weight:normal;font-size:11.5px">（搜索「发送信息」）</span></h3>
+      <ul class="list">
+        <li><b>按住拖动</b>，把它拖到「如果」和「否则 / 结束如果」中间，看到它往里缩进了一格就对了。</li>
+        <li>「<span class="par">信息</span>」里输入：<code>验证码：</code> + 变量<span class="var">列表中的项目</span>，换行后输入 <code>原文：</code> + 变量<span class="var pur">快捷指令输入</span>。</li>
+        <li>「<span class="par">收件人</span>」填 <b>B 的新账户</b> <code>b-phone@example.com</code>。</li>
+        <li>点动作右边的 <b>⌄ 展开箭头</b>，<b>关闭「显示时运行」</b>，否则每次都会停下来等你点「发送」。</li>
+      </ul>
+      <div class="box ok"><b>最后</b>点右上角<b>完成</b>，自动化就保存好了。在自动化列表里能看到「当我收到包含"验证码"的信息时」这一条。</div>
+    </div>
+
+    <div style="flex:1">
+      <div class="phone" style="height:560px">
+        <div class="di"></div><div class="who a">A</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0 12px 6px;font-size:10.5px"><span style="color:var(--blue)">‹ 返回</span><b>当我收到…验证码</b><span style="color:var(--blue);font-weight:bold">完成</span></div>
+        <div style="height:6px"></div>
+        <div class="act"><span class="step-badge">1</span>
+          <span class="ai" style="background:#ff9500">Aa</span>在 <span class="var pur">快捷指令输入</span> 中匹配<br>
+          <span class="par mono" style="background:#fff3e0;font-size:10px">(?&lt;!\d)\d{4,8}(?!\d)</span><br>
+          <span style="color:var(--sub);font-size:9.5px">区分大小写 ○</span>
+        </div>
+        <div class="act"><span class="step-badge">2</span>
+          <span class="ai" style="background:#ff9500">≡</span>获取 <span class="pill">第一项</span> 从 <span class="var">匹配项</span>
+        </div>
+        <div class="act"><span class="step-badge">3</span>
+          <span class="ai" style="background:#8e8e93">Y</span>如果 <span class="var">列表中的项目</span> <span class="pill">有任何值</span>
+        </div>
+        <div class="act in hl"><span class="step-badge">4</span>
+          <span class="ai" style="background:#34c759">💬</span>发送<br>
+          <span style="display:inline-block;border:1px dashed #b9c9e6;border-radius:6px;padding:2px 6px;margin:2px 0;line-height:1.6">验证码：<span class="var">列表中的项目</span><br>原文：<span class="var pur">快捷指令输入</span></span><br>
+          给 <span class="pill">b-phone@example.com</span>
+          <div style="border-top:0.5px solid #e2e2e6;margin-top:5px;padding-top:4px;display:flex;align-items:center;justify-content:space-between;font-size:10px">显示时运行 <div class="tg"></div></div>
+          <span class="pin">!</span>
+        </div>
+        <div class="act" style="color:var(--sub)"><span class="ai" style="background:#8e8e93">Y</span>否则 <span style="font-size:9.5px">（留空或删除）</span></div>
+        <div class="act" style="color:var(--sub)"><span class="ai" style="background:#8e8e93">Y</span>结束如果</div>
+      </div>
+      <div class="cap" style="font-size:11px">↑ 完成后的样子。<span style="color:var(--red);font-weight:bold">第 4 步</span>一定要缩进在「如果」里面，并且「显示时运行」是<b>关闭</b>的。</div>
+    </div>
+  </div>
+
+  <div class="foot"><span>第三部分（下）· 手机 A 动作</span><span>5 / 6</span></div>
+</section>
+
+<!-- ================= 第 6 页：测试 + FAQ + 代码 ================= -->
+<section class="page">
+  <h2><span class="tag a">A</span><span class="tag b">B</span> 第四部分：实测与常见问题</h2>
+
+  <div class="two" style="margin-top:6px">
+    <div style="flex:1.4">
+      <h3 style="margin-top:2px">实测步骤</h3>
+      <ol class="list">
+        <li>把手机 A <b>锁屏</b>放在一边。</li>
+        <li>找一个网站或 App，点「获取验证码」，让它往 A 的号码发一条短信。</li>
+        <li>几秒钟内，B 应该会弹出右边这样的通知。</li>
+        <li>在 B 上<b>长按通知</b>，就能复制验证码。</li>
+      </ol>
+      <h3>这个快捷指令做了什么（逻辑说明）</h3>
+      <div class="codeblock"><span class="c"># 触发：A 收到一条包含「验证码」的信息</span>
+<span class="v">输入</span>   = 这条短信的全文
+<span class="v">匹配项</span> = <span class="k">匹配文本</span>(输入, <span class="s">(?&lt;!\d)\d{4,8}(?!\d)</span>)
+<span class="v">验证码</span> = 匹配项 的 <span class="k">第一项</span>
+<span class="k">如果</span> 验证码 <span class="k">有任何值</span>:
+    <span class="k">发送 iMessage</span> → b-phone@example.com
+        「验证码：{验证码}
+         原文：{输入}」
+<span class="k">结束如果</span></div>
+      <p style="font-size:11.5px;color:var(--sub)">正则 <code>(?&lt;!\d)\d{4,8}(?!\d)</code> 的意思是：找到第一串<b>恰好 4～8 位</b>的连续数字，前后都不能紧挨着别的数字。这样可以排除「5 分钟」里的 5，也不会从更长的数字（比如订单号）里截出一段。</p>
+    </div>
+    <div style="flex:1">
+      <div class="phone lock" style="height:330px">
+        <div class="di"></div><div class="who b">B</div>
+        <div class="sb"><span></span><span>●●● ▮</span></div>
+        <div class="date" style="margin-top:6px">10月23日 星期五</div>
+        <div class="clock">9:42</div>
+        <div class="notif">
+          <div class="h"><span class="mi">💬</span>信息<span style="margin-left:auto">现在</span></div>
+          <div class="t">验证码转发</div>
+          <div>验证码：<b style="font-size:13px">382915</b><br>原文：【某银行】您的验证码为 382915，5 分钟内有效，请勿泄露。</div>
+        </div>
+      </div>
+      <div class="cap" style="text-align:center">B 收到的通知（示意）</div>
+    </div>
+  </div>
+
+  <h3>常见问题</h3>
+  <table class="t" style="font-size:11.5px">
+    <tr><th style="width:34%">问题</th><th>原因与处理</th></tr>
+    <tr><td>短信到了，B 什么都没收到</td><td>① 快捷指令 → 自动化，确认这条自动化存在并且已<b>启用</b>；② 短信里写的是不是「校验码」之类别的词，没有「验证码」三个字（参见第 4 页，多建几个关键词）；③ 再按第 3 页手动测试一次 A → B。</td></tr>
+    <tr><td>每次都要在 A 上点一下才会发送</td><td>第 4 页第 5 步选成了「运行前确认」，或者第 5 页「发送信息」的<b>显示时运行</b>没关。</td></tr>
+    <tr><td>B 收到的验证码不对</td><td>短信里在验证码前面还有别的 4～8 位数字（比如年份、金额）。直接看通知里的「原文」核对就行。</td></tr>
+    <tr><td>A 上的「信息」里多了一个和 B 的对话</td><td>这是正常的，转发记录会留在这个对话里。可以把它设为<b>隐藏提醒</b>，或者定期删掉。</td></tr>
+    <tr><td>A 关机、没网络或开飞行模式时</td><td>iMessage 发不出去，B 也就收不到。这套方案只能当作<b>辅助</b>，不能当作唯一的收码方式。</td></tr>
+    <tr><td>想暂停同步</td><td>A：快捷指令 → 自动化 → 点进这条自动化，关掉开关就行，不用删除。</td></tr>
+  </table>
+  <div class="box warn"><b>再次提醒</b>B 能看到所有银行、支付类验证码。B 必须设锁屏密码，不要借给别人用。另外建议到 B 的「设置 → 通知 → 信息 → 显示预览」里选<b>解锁时</b>，避免锁屏状态下别人直接看到验证码。</div>
+
+  <div class="foot"><span>第四部分 · 测试与排错</span><span>6 / 6</span></div>
+</section>
+
+</body>
+</html>
